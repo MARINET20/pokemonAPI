@@ -4,15 +4,16 @@ import requests
 app = Flask(__name__)
 
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
     BASE_URL = 'https://pokeapi.co/api/v2/pokemon?limit=151'
     response = requests.get(BASE_URL)
     data = response.json()
+
     q = request.args.get('q', '')
     if q:
         names = [pokemon['name'] for pokemon in data['results'] if q.lower() in pokemon['name'].lower()]
-        search_query: q
+        search_query = q
     else:
         names = [pokemon['name'] for pokemon in data['results']]
 
