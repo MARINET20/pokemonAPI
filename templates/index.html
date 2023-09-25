@@ -2,14 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
     <title>Pokemon Names</title>
 </head>
 <body>
+   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-5" >
+       <a class="navbar-brand" href="#">Pokemon Names</a>
+           <form class="form-inline my-2 my-lg-0" method="get">
+               <input class="form-control mr-sm-2" type="search" placeholder="Search" name="q" value="{{ search_query }}">
+               <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+           </form>
+   </nav>
    <h1>Pokemon Names:</h1>
-    <ul>
-      {% for name in names %}
-      <li>{{ name }}</li>
-      {% endfor %}
-    </ul>
+       <ul>
+           {% for name in names %}
+           <li>{{ name }}</li>
+           {% endfor %}
+       </ul>
 </body>
 </html>
