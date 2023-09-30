@@ -15,11 +15,48 @@
                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
            </form>
    </nav>
-   <h1>Pokemon Names:</h1>
-       <ul>
-           {% for name in names %}
-           <li>{{ name }}</li>
+
+   <div class="container">
+       <div class="row">
+           {% for pokemon in pokemon_list %}
+           <div class="col-md-4">
+               <div class="card" style="width: 18rem;">
+               <img src="{{ pokemon.image }}" alt="{{pokemon.name}}">
+               <div class="card-body">
+                   <h5 class="card-title">{{pokemon.name}}</h5>
+                   <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                   <a href="#" class="btn btn-primary">Выбрать</a>
+               </div>
+           </div>
+           </div>
            {% endfor %}
-       </ul>
+       </div>
+   </div>
+<!--   <h1>Pokemon Names:</h1>-->
+<!--   {% for name in names %}-->
+<!--   <div id="header-container" class="ui inverted segment">-->
+<!--        <div class="ui inverted secondary menu">-->
+<!--           <h1>{{ name }}</h1>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    <div id="container">-->
+<!--        <div id="poke-container" class="ui cards">-->
+<!--            {% for image in pokeImages %}-->
+<!--                <img src="{{ image }}" alt="Pokemon Image">-->
+<!--            {% endfor %}-->
+<!--                <button id="generate-pokemon" class="ui secondary button">Generate Pokemon</button>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--   {% endfor %}-->
+<!--   <div>-->
+<!--       {% for image in pokeImages %}-->
+<!--        <img src="{{ image }}" alt="Pokemon Image">-->
+<!--       {% endfor %}-->
+<!--   </div>-->
+<!--       <ul>-->
+<!--           {% for name in names %}-->
+<!--           <li>{{ name }}</li>-->
+<!--           {% endfor %}-->
+<!--       </ul>-->
 </body>
 </html>
