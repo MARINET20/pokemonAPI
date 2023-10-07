@@ -5,58 +5,118 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link rel="stylesheet" href="../static/style.css">
     <title>Pokemon Names</title>
+
 </head>
 <body>
-   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-5" >
-       <a class="navbar-brand" href="#">Pokemon Names</a>
-           <form class="form-inline my-2 my-lg-0" method="get">
-               <input class="form-control mr-sm-2" type="search" placeholder="Search" name="q" value="{{ search_query }}">
-               <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+   <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-5 box-shadow-nav" style="height: 80px">
+       <a class="navbar-brand" href="#">Покемоны</a>
+           <form class="form-inline my-5 my-lg-0" method="get">
+               <input class="form-control mr-sm-3" type="search" placeholder="Введите имя покемона" name="q" value="{{ search_query }}" style="width: 300px;height: 40px;font-size:20px;">
+               <button class="btn btn-outline-success my-2 my-sm-0" type="submit" style="font-size: 17px">Поиск</button>
            </form>
    </nav>
 
-   <div class="container">
+   <div class="container-md">
        <div class="row">
-           {% for pokemon in pokemon_list %}
-           <div class="col-md-4">
-               <div class="card" style="width: 18rem;">
-               <img src="{{ pokemon.image }}" alt="{{pokemon.name}}">
+           {% for pokemon in pokemons %}
+           <div class="col-md-4" style="height: 80%; margin-top: 10px">
+               <div class="card box-shadow-nav">
+               <div class="aspect-ratio-box">
+               <img src="{{ pokemon.image_url }}"  data-bs-toggle="modal" data-bs-target="#exampleModal" onclick="myFunction('{{pokemon.name}}')" alt="{{pokemon.name}}"  style="width: 100%" />
+               </div>
                <div class="card-body">
-                   <h5 class="card-title">{{pokemon.name}}</h5>
-                   <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                   <a href="#" class="btn btn-primary">Выбрать</a>
+                   <h4 class="card-title" onclick="myFunction('{{pokemon.name}}')" id="name" data-bs-toggle="modal" data-bs-target="#exampleModal">{{pokemon.name}}</h4>
+                   <h5 class="card-text" id="speed"> Скорость: {{pokemon.speed}}</h5>
+                   <h5 class="card-text" id="defense"> Защита: {{pokemon.defense}}</h5>
+                   <a href="{{ url_for('battle') }}" id=battle onclick="savePokemonName('{{pokemon.name}}','{{pokemon.image_url}}')" class="btn btn-success" style="font-size: 120%">Выбрать</a>
                </div>
            </div>
            </div>
            {% endfor %}
        </div>
    </div>
-<!--   <h1>Pokemon Names:</h1>-->
-<!--   {% for name in names %}-->
-<!--   <div id="header-container" class="ui inverted segment">-->
-<!--        <div class="ui inverted secondary menu">-->
-<!--           <h1>{{ name }}</h1>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--    <div id="container">-->
-<!--        <div id="poke-container" class="ui cards">-->
-<!--            {% for image in pokeImages %}-->
-<!--                <img src="{{ image }}" alt="Pokemon Image">-->
-<!--            {% endfor %}-->
-<!--                <button id="generate-pokemon" class="ui secondary button">Generate Pokemon</button>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--   {% endfor %}-->
-<!--   <div>-->
-<!--       {% for image in pokeImages %}-->
-<!--        <img src="{{ image }}" alt="Pokemon Image">-->
-<!--       {% endfor %}-->
-<!--   </div>-->
-<!--       <ul>-->
-<!--           {% for name in names %}-->
-<!--           <li>{{ name }}</li>-->
-<!--           {% endfor %}-->
-<!--       </ul>-->
+   {% if total_pages > 1 %}
+   <nav>
+       <ul class="pagination justify-content-center">
+           <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+               <a class="page-link" href="{% if current_page == 1 %}#{% else %}?page={{ current_page - 1 }}{% endif %}" aria-label="Предыдущая">
+                   <span aria-hidden="true">&laquo;</span>
+               </a>
+           </li>
+           {% for i in range(1, total_pages + 1) %}
+           {% if i == current_page %}
+           <li class="page-item active">
+               <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+           </li>
+           {% elif i <= current_page + 2 and i >= current_page - 2 %}
+           <li class="page-item">
+               <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+           </li>
+           {% endif %}
+           {% endfor %}
+           <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+               <a class="page-link" href="{% if current_page == total_pages %}#{% else %}?page={{ current_page + 1 }}{% endif %}" aria-label="Следующая">
+                   <span aria-hidden="true">&raquo;</span>
+               </a>
+           </li>
+       </ul>
+   </nav>
+   {% endif %}
+
+
+<!-- Модальное окно -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Заголовок модального окна</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        ...
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+        <button type="button" class="btn btn-success">Выбрать</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="../static/scripts.js"></script>
+<!--<script>-->
+<!--    function myFunction(pokemonName) {-->
+<!--        // Загрузка данных из JSON файла-->
+<!--        fetch('/read_json')-->
+<!--            .then(response => response.json())-->
+<!--            .then(data => {-->
+<!--                // Нахождение покемона по имени в загруженных данных-->
+<!--                const pokemon = data.find(p => p.name === pokemonName);-->
+<!--                if (pokemon) {-->
+<!--                    // Отображение полной информации о покемоне-->
+<!--                    console.log(pokemon);-->
+<!--                    // Получаем модальное окно-->
+<!--                    var modal = document.getElementById("exampleModal");-->
+<!--                     // Находим элементы модального окна, в которые нужно вставить информацию о покемоне-->
+<!--                    var modalTitle = modal.querySelector(".modal-title");-->
+<!--                    var modalBody = modal.querySelector(".modal-body");-->
+<!--                    // Вставляем информацию о покемоне в элементы модального окна-->
+<!--                    modalTitle.textContent = pokemon.name;-->
+<!--                    modalBody.innerHTML = "<h5>Скорость: " + pokemon.speed + "</h5><h5>Защита: " + pokemon.defense + "</h5>" +-->
+<!--                        "<h5>Атака: " + pokemon.attack + "</h5><h5>HP: " + pokemon.hp + "</h5><h5>Вес: " + pokemon.weight + "</h5>";-->
+
+<!--                    // Открываем модальное окно-->
+<!--                    var modalBS = bootstrap.Modal.getInstance(modal);-->
+<!--                    modalBS.show();-->
+<!--                } else {-->
+<!--                    console.log('Покемон не найден');-->
+<!--                }-->
+<!--            })-->
+<!--            .catch(error => console.log(error));-->
+<!--    }-->
+<!--</script>-->
 </html>
