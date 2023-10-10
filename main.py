@@ -1,4 +1,5 @@
 import math
+import os
 import random
 import datetime
 from flask import Flask, jsonify, render_template, request, redirect, url_for
@@ -28,11 +29,25 @@ def load_most_recent_pokemon():
         return json.load(f)
 
 
-def pokemon_json():
+def is_json_empty():
+    file_size = os.path.getsize('pokemons.json')
+    if file_size == 0:
+        return True
+    with open('pokemons.json', 'r') as f:
+        d = json.load(f)
+        if not d:
+            return True
+    return False
+
+
+def pokemons_info_json(name):
     with open('pokemons.json', 'r') as json_file:
         data_ = json.load(json_file)
-        name = [pokemon['name'] for pokemon in data_]
-    return name
+        for pokemon in data_:
+            if pokemon['name'] == name:
+                attack = pokemon['attack']
+                hp = pokemon['hp']
+    return attack, hp
 
 
 global names
@@ -45,22 +60,24 @@ names = [pokemon['name'] for pokemon in data['results']]
 
 @app.route('/', methods=['GET'])
 def index():
-    poke = []
-    # for name in names:
-    #     pokemon_url = f'https://pokeapi.co/api/v2/pokemon/{name}'
-    #     r = requests.get(pokemon_url).json()
-    #     d = {
-    #         'name': r['name'].upper(),
-    #         'speed': r['stats'][-1]['base_stat'],
-    #         'defense': r['stats'][2]['base_stat'],
-    #         'special_defense': r['stats'][4]['base_stat'],
-    #         'attack': r['stats'][1]['base_stat'],
-    #         'special_attack': r['stats'][3]['base_stat'],
-    #         'hp': r['stats'][0]['base_stat'],
-    #         'weight': r['weight'],
-    #         'image_url': r['sprites']['other']['dream_world']['front_default']
-    #     }
-    #     poke.append(d)
+    if is_json_empty == True:
+        poke = []
+        for name in names:
+            pokemon_url = f'https://pokeapi.co/api/v2/pokemon/{name}'
+            r = requests.get(pokemon_url).json()
+            d = {
+                'name': r['name'],
+                'speed': r['stats'][-1]['base_stat'],
+                'defense': r['stats'][2]['base_stat'],
+                'special_defense': r['stats'][4]['base_stat'],
+                'attack': r['stats'][1]['base_stat'],
+                'special_attack': r['stats'][3]['base_stat'],
+                'hp': r['stats'][0]['base_stat'],
+                'weight': r['weight'],
+                'image_url': r['sprites']['other']['dream_world']['front_default']
+            }
+            poke.append(d)
+        save_most_recent_pokemon(poke)
 
     page = request.args.get('page', type=int, default=1)
     per_page = 6
@@ -78,72 +95,98 @@ def index():
     end = start + per_page
     pokemons = pokemons[start:end]
 
-    return render_template('index.html', pokemons=pokemons, search_query=q, current_page=page, total_pages=total_pages,
-                           poke=poke)
+    return render_template('index.html', pokemons=pokemons, search_query=q, current_page=page, total_pages=total_pages)
 
 
 round_results = []
-name = pokemon_json()
-# opponent_pokemon = random.choice(name)
 
 
-# img_opponent = pokemon_json(opponent_pokemon)
-# print(img_opponent)
+@app.route('/battle/<name>', methods=['GET', 'POST'])
+def battle(name):
+    global attack
+    global hp
+    global attack_pokemon
+    global hp_pokemon
+    global opponent_pokemon
+    global user_pokemon
+    global result
 
-
-@app.route('/battle', methods=['GET', 'POST'])
-def battle(opponent_pokemon=random.choice(name)):
     if request.method == 'GET':
-        opponent_pokemon = random.choice(name)
+        opponent_pokemon = random.choice(names)
+        attack, hp = pokemons_info_json(opponent_pokemon)
+        attack_pokemon, hp_pokemon = pokemons_info_json(name)  # выбранный пользователем покемон
+        user_pokemon = name
+        result = ''
     if request.method == 'POST':
-        user_input = int(request.form['submit'])
-        opponent_number = random.randint(1, 10)
-        result_text = " Противник бьёт!"
-
-        if user_input % 2 == opponent_number % 2:
-            result_text = "Покемон пользователя наносит удар!"
-
-        round_results.append({
-            'user_input': user_input,  # вводимое число пользователя
-            'opponent_number': opponent_number,  # рандомное число компьютера
-            'result_text': result_text
-        })
-        # print(round_results)
-        if len(round_results) == 3:
-            # Выполнено три раунда, вычисляем итоговый результат
-            user_wins = sum([1 for rnd in round_results if 'наносит удар' in rnd['result_text']])
-            opponent_wins = 3 - user_wins
-            game_score = str(user_wins) + ":" + str(opponent_wins)
+        if hp <= 0 or hp_pokemon <= 0:
+            print(hp, hp_pokemon, " sorry")
+            # вычисляем итоговый результат
             result_text = "Игра окончена!"
-            if user_wins > opponent_wins:
-                result = " Вы победили!"
-                winner = "User"
+            if hp < hp_pokemon:
+                result = "Вы победили!"
+                winner = "Пользователь"
+            elif hp > hp_pokemon:
+                result = "Вы проиграли..."
+                winner = "Враг"
             else:
-                result = " Вы проиграли..."
-                winner = "Opponent"
+                result = "Ничья"
+                winner = "Ничья"
 
-            # Insert the data into the database
-            cur = conn.cursor()
-            cur.execute(
-                "INSERT INTO results (winner, game_score, date) VALUES (%s, %s, %s)", (winner, game_score,
-                                                                                       datetime.datetime.now()))
-            conn.commit()
-
-            return render_template('battle.html', round_results=round_results, user_wins=user_wins,
-                                   opponent_wins=opponent_wins, opponent_pokemon=opponent_pokemon,
-                                   result_text=result_text, opponent_number=opponent_number, result=result)
-
-        elif len(round_results) == 1 or len(round_results) == 2:
-            return render_template('battle.html', result_text=result_text, opponent_number=opponent_number, 
-                                   opponent_pokemon=opponent_pokemon)
+            return render_template('battle.html', result_text=result_text, opponent_pokemon=opponent_pokemon, name=name,
+                                   hp=hp, hp_pokemon=hp_pokemon, result=result)
         else:
-            opponent_pokemon = random.choice(name)
-            return redirect(url_for('index',opponent_pokemon=opponent_pokemon))  # изменили на перенаправление на страницу index
+            user_input = int(request.form['submit'])
+            opponent_number = random.randint(1, 10)
 
-    #opponent_pokemon = random.choice(name)
+            print(hp,hp_pokemon)
+            if user_input % 2 == opponent_number % 2:
+                # отнимаем от жизни оппонента кол-во атак пользовательского покемона
+                hp = hp - attack_pokemon
+                result_text = "Покемон пользователя наносит удар!"
+                if hp <= 0:
+                    result = "Вы победили!"
+                    winner = "Пользователь"
+                    result_text = "Игра окончена!"
+
+                    cur = conn.cursor()
+                    cur.execute(
+                        "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s,%s)",
+                        (user_pokemon, opponent_pokemon, winner, datetime.datetime.now()))
+                    conn.commit()
+            else:
+                hp_pokemon = hp_pokemon - attack
+                result_text = " Противник бьёт!"
+                if hp_pokemon <= 0:
+                    result = "Вы проиграли..."
+                    winner = "Враг"
+                    result_text = "Игра окончена!"
+
+                    cur = conn.cursor()
+                    cur.execute(
+                        "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s,%s)",
+                        (user_pokemon, opponent_pokemon, winner, datetime.datetime.now()))
+                    conn.commit()
+            print(hp, hp_pokemon)
+            round_results.append({
+                'user_input': user_input,  # вводимое число пользователя
+                'opponent_number': opponent_number,  # рандомное число компьютера
+                'hp': hp,
+                'hp_pokemon': hp_pokemon,
+                'attack': attack,
+                'attack_pokemon': attack_pokemon,
+                'result_text': result_text
+            })
+
+            return render_template('battle.html', result_text=result_text, opponent_pokemon=opponent_pokemon, name=name,
+                                   hp=hp, hp_pokemon=hp_pokemon, result=result)
+
+    # return redirect(url_for('result.html'))
+
+    # return redirect(url_for('index'))  # изменили на перенаправление на
+
     round_results.clear()  # Очищаем результаты перед началом новой игры
-
-    return render_template('battle.html', opponent_pokemon=opponent_pokemon)
+    return render_template('battle.html', opponent_pokemon=opponent_pokemon, name=name, hp=hp, hp_pokemon=hp_pokemon,
+                           result=result)
 
 
 @app.route('/read_json')
