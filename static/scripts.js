@@ -30,7 +30,15 @@ function myFunction(pokemonName) {
     };
 
 
-    function savePokemonName(name,image_url) {
+    function savePokemonName(name,image_url, defense, attack) {
+        // const pokemon = {
+        //     name:name,
+        //     attack:attack
+        // };
+        // const jsonPokemon = JSON.stringify(pokemon);
         localStorage.setItem('name', name);
         localStorage.setItem('image_url', image_url);
+        localStorage.setItem('defense', defense);
+        localStorage.setItem('attack', attack);
+
     }
