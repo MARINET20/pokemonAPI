@@ -1,6 +1,6 @@
 function myFunction(pokemonName) {
         // Загрузка данных из JSON файла
-        fetch('/read_json')
+        fetch('pokemon/')
             .then(response => response.json())
             .then(data => {
                 // Нахождение покемона по имени в загруженных данных
