@@ -30,7 +30,7 @@
                    <h4 class="card-title" onclick="myFunction('{{pokemon.name}}')" id="name" data-bs-toggle="modal" data-bs-target="#exampleModal">{{pokemon.name}}</h4>
                    <h5 class="card-text" id="speed"> Скорость: {{pokemon.speed}}</h5>
                    <h5 class="card-text" id="defense"> Защита: {{pokemon.defense}}</h5>
-                   <a href="{{ url_for('battle', name=pokemon.name) }}"  onclick="savePokemonName('{{pokemon.name}}','{{pokemon.image_url}}','{{pokemon.attack}}','{{pokemon.defense}}')" class="btn btn-success" style="font-size: 120%">Выбрать</a>
+                   <a href="{{ url_for('fight', name=pokemon.name) }}"  onclick="savePokemonName('{{pokemon.name}}','{{pokemon.image_url}}','{{pokemon.attack}}','{{pokemon.defense}}')" class="btn btn-success" style="font-size: 120%">Выбрать</a>
                </div>
            </div>
            </div>
@@ -75,11 +75,10 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
       </div>
       <div class="modal-body">
-        ...
+
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-        <button type="button" class="btn btn-success">Выбрать</button>
       </div>
     </div>
   </div>
