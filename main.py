@@ -13,6 +13,8 @@ app = Flask(__name__)
 # Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = ''
+app.config['MAIL_PASSWORD'] = ''
 # app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = True
 
@@ -160,9 +162,7 @@ def fight(name):
 
     if request.method == 'GET':
         opponent_pokemon = random.choice(names).upper()
-        # print(opponent_pokemon)
         attack, hp, img = pokemons_info_json(opponent_pokemon)
-        # print(attack, hp)
         attack_pokemon, hp_pokemon, img_pokemon = pokemons_info_json(name)  # выбранный пользователем покемон
         user_pokemon = name
         result = ''
@@ -238,10 +238,12 @@ def fight(name):
                            result=result, img=img, img_pokemon=img_pokemon)
 
 
-@app.route('/pokemon/', methods=['GET'])
-def pokemon():
+@app.route('/pokemon/<name>', methods=['GET'])
+def pokemon(name):
     with open('pokemons.json') as json_file:
         d = json.load(json_file)
+    # Нахождение покемона по имени в загруженных данных
+    pokemon = next((p for p in d if p['name'] == name), None)
     return d
 
 
