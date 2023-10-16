@@ -1,13 +1,13 @@
 function myFunction(pokemonName) {
         // Загрузка данных из JSON файла
-        fetch('pokemon/')
+        fetch('pokemon/'+pokemonName)
             .then(response => response.json())
             .then(data => {
                 // Нахождение покемона по имени в загруженных данных
                 const pokemon = data.find(p => p.name === pokemonName);
                 if (pokemon) {
                     // Отображение полной информации о покемоне
-                    console.log(pokemon);
+                    //console.log(pokemon);
                     // Получаем модальное окно
                     var modal = document.getElementById("exampleModal");
                      // Находим элементы модального окна, в которые нужно вставить информацию о покемоне
