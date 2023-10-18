@@ -181,7 +181,7 @@ def fight(name):
                 result = "Ничья"
                 winner = "Ничья"
 
-            return render_template('battle.html', result_text=result_text, opponent_pokemon=opponent_pokemon, name=name,
+            return render_template('fight.html', result_text=result_text, opponent_pokemon=opponent_pokemon, name=name,
                                    hp=hp, hp_pokemon=hp_pokemon, result=result, img=img, img_pokemon=img_pokemon)
         else:
             user_input = int(request.form['submit'])
@@ -226,7 +226,7 @@ def fight(name):
                 'result_text': result_text
             })
 
-            return render_template('battle.html', result_text=result_text, opponent_pokemon=opponent_pokemon, name=name,
+            return render_template('fight.html', result_text=result_text, opponent_pokemon=opponent_pokemon, name=name,
                                    hp=hp, hp_pokemon=hp_pokemon, result=result, img=img, img_pokemon=img_pokemon)
 
     # return redirect(url_for('result.html'))
@@ -234,7 +234,7 @@ def fight(name):
     # return redirect(url_for('index'))  # изменили на перенаправление на
 
     round_results.clear()  # Очищаем результаты перед началом новой игры
-    return render_template('battle.html', opponent_pokemon=opponent_pokemon, name=name, hp=hp, hp_pokemon=hp_pokemon,
+    return render_template('fight.html', opponent_pokemon=opponent_pokemon, name=name, hp=hp, hp_pokemon=hp_pokemon,
                            result=result, img=img, img_pokemon=img_pokemon)
 
 
