@@ -322,11 +322,11 @@ def quickBattle(name):
             print(email)
             result_text_message = send_email(email, result)
 
-        return render_template('quickBattle.html', result_text=result_text, opponent_pokemon=opponent_pokemon,
+        return render_template('fightFast.html', result_text=result_text, opponent_pokemon=opponent_pokemon,
                                name=name, hp=hp, hp_pokemon=hp_pokemon, result=result, round_results=round_results,
                                img=img, img_pokemon=img_pokemon, result_text_message=result_text_message)
 
-    return render_template('quickBattle.html', result_text=result_text, opponent_pokemon=opponent_pokemon,
+    return render_template('fightFast.html', result_text=result_text, opponent_pokemon=opponent_pokemon,
                            name=name, hp=hp, hp_pokemon=hp_pokemon, result=result, round_results=round_results,
                            img=img, img_pokemon=img_pokemon)
 
