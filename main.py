@@ -32,27 +32,6 @@ conn = psycopg2.connect(
 )
 
 
-# def send_email(email, result_battle):
-#     sender_email = "lisachekanova@gmail.com"  # замените на свой email
-#     sender_password = "tnxz ccjt dofz uguv"  # замените на свой пароль
-#     receiver_email = email
-#
-#     # Устанавливаем соединение с SMTP-сервером
-#     server = smtplib.SMTP('smtp.gmail.com', 587)
-#     server.starttls()
-#     server.login(sender_email, sender_password)
-#
-#     # Создаем сообщение
-#     message = f"Subject: Результаты боя\n\n{result_battle}"
-#
-#     # Отправляем сообщение
-#     server.sendmail(sender_email, receiver_email, message)
-#
-#     # Закрываем соединение
-#     server.quit()
-#     return 'Email sent successfully'
-
-
 def send_email(email, result_battle):
     message = "Битва Покемонов"
     try:
@@ -343,7 +322,7 @@ def pokemon(name):
     return render_template('pokemonInfo.html', pokemon=pokemon)
 
 
-@app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>',  methods=['GET', 'POST'])
+@app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>', methods=['GET', 'POST'])
 def save(name, speed, hp, defense, attack, weight):
     USERNAME = 'user'
     PASSWORD = 'Chekanova2023@'
@@ -373,9 +352,6 @@ def save(name, speed, hp, defense, attack, weight):
 
     return render_template('savePokemon.html', name=name, speed=speed, hp=hp,
                            defense=defense, attack=attack, weight=weight)
-
-
-
 
 
 if __name__ == '__main__':
