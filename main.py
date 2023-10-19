@@ -32,27 +32,6 @@ conn = psycopg2.connect(
 )
 
 
-# def send_email(email, result_battle):
-#     sender_email = "lisachekanova@gmail.com"  # замените на свой email
-#     sender_password = "tnxz ccjt dofz uguv"  # замените на свой пароль
-#     receiver_email = email
-#
-#     # Устанавливаем соединение с SMTP-сервером
-#     server = smtplib.SMTP('smtp.gmail.com', 587)
-#     server.starttls()
-#     server.login(sender_email, sender_password)
-#
-#     # Создаем сообщение
-#     message = f"Subject: Результаты боя\n\n{result_battle}"
-#
-#     # Отправляем сообщение
-#     server.sendmail(sender_email, receiver_email, message)
-#
-#     # Закрываем соединение
-#     server.quit()
-#     return 'Email sent successfully'
-
-
 def send_email(email, result_battle):
     message = "Битва Покемонов"
     try:
@@ -373,34 +352,6 @@ def save(name, speed, hp, defense, attack, weight):
 
     return render_template('savePokemon.html', name=name, speed=speed, hp=hp,
                            defense=defense, attack=attack, weight=weight)
-
-
-# def save_pokemon_info(name, speed, hp, defense):
-#     USERNAME = 'user'
-#     PASSWORD = 'Chekanova2023@'
-#     HOST = '192.168.1.7'
-#
-#     ftp = ftplib.FTP(HOST, USERNAME, PASSWORD)
-#     files = ftp.nlst()
-#     print(files)
-#
-#     markdown_text = f"# {name}\n\nСкорость: {speed}\n\nЖизнь: {hp}\n\nЗащита: {defense}"
-#     html_text = markdown.markdown(markdown_text)
-#
-#     file_name = f"{name}.md"
-#     current_date = datetime.datetime.now().strftime('%d.%m.%Y')
-#
-#     if current_date in ftp.nlst():
-#         ftp.cwd(current_date)
-#     else:
-#         ftp.mkd(current_date)
-#         ftp.cwd(current_date)
-#
-#     with open(current_date, 'wb') as f:
-#         f.write(markdown_text.encode())
-#     ftp.storbinary('STOR ' + file_name, open(current_date, 'rb'))
-#
-#     ftp.quit()
 
 
 if __name__ == '__main__':
