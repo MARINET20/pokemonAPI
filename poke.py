@@ -10,11 +10,11 @@ import markdown
 
 
 def save_pokemon_info(name):
-    USERNAME = 'user'
-    PASSWORD = 'Chekanova2023@'
+    USERNAME = ''
+    PASSWORD = ''
     PORT = 21
 
-    ftp = ftplib.FTP('192.168.1.7', USERNAME, PASSWORD)
+    ftp = ftplib.FTP('', USERNAME, PASSWORD)
 
     files = ftp.nlst()
     print(files)
