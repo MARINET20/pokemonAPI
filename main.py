@@ -345,9 +345,9 @@ def pokemon(name):
 
 @app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>',  methods=['GET', 'POST'])
 def save(name, speed, hp, defense, attack, weight):
-    USERNAME = 'user'
-    PASSWORD = 'Chekanova2023@'
-    HOST = '192.168.1.7'
+    USERNAME = ''
+    PASSWORD = ''
+    HOST = ''
 
     ftp = ftplib.FTP(HOST, USERNAME, PASSWORD)
     files = ftp.nlst()
