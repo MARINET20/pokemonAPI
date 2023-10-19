@@ -24,10 +24,10 @@
            <div class="col-md-4" style="height: 80%; margin-top: 10px">
                <div class="card box-shadow-nav">
                <div class="aspect-ratio-box">
-               <img src="{{ pokemon.image_url }}"  data-bs-toggle="modal" data-bs-target="#exampleModal" onclick="myFunction('{{pokemon.name}}')" alt="{{pokemon.name}}"  style="width: 100%" />
+               <a href="{{ url_for('pokemon', name=pokemon.name) }}"><img src="{{ pokemon.image_url }}"  data-bs-toggle="modal" data-bs-target="#exampleModal"  alt="{{pokemon.name}}"  style="width: 100%" /></a>
                </div>
                <div class="card-body">
-                   <h4 class="card-title" onclick="myFunction('{{pokemon.name}}')" id="name" data-bs-toggle="modal" data-bs-target="#exampleModal">{{pokemon.name}}</h4>
+                   <a href="{{ url_for('pokemon', name=pokemon.name) }}"><h4 class="card-title" id="name" data-bs-toggle="modal" data-bs-target="#exampleModal">{{pokemon.name}}</h4></a>
                    <h5 class="card-text" id="speed"> Скорость: {{pokemon.speed}}</h5>
                    <h5 class="card-text" id="defense"> Защита: {{pokemon.defense}}</h5>
                    <a href="{{ url_for('fight', name=pokemon.name) }}"  onclick="savePokemonName('{{pokemon.name}}','{{pokemon.image_url}}','{{pokemon.attack}}','{{pokemon.defense}}')" class="btn btn-success" style="font-size: 120%">Выбрать</a>
@@ -67,22 +67,22 @@
 
 
 <!-- Модальное окно -->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Заголовок модального окна</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-      </div>
-      <div class="modal-body">
+<!--<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">-->
+<!--  <div class="modal-dialog">-->
+<!--    <div class="modal-content">-->
+<!--      <div class="modal-header">-->
+<!--        <h5 class="modal-title" id="exampleModalLabel">Заголовок модального окна</h5>-->
+<!--        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>-->
+<!--      </div>-->
+<!--      <div class="modal-body">-->
 
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-      </div>
-    </div>
-  </div>
-</div>
+<!--      </div>-->
+<!--      <div class="modal-footer">-->
+<!--        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
 </body>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
