@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <title>Информация о покемоне</title>
+</head>
+<body>
+<h1 class="text-center">Информация о {{name}}</h1>
+<div class="container">
+    <div class="row d-flex justify-content-center align-items-center">
+        <div class="col-md-6">
+            <div class="card box-shadow-nav">
+                <div class="card-body">
+                    <h4 class="card-title"></h4>
+                    <h5 class="card-text">Скорость: {{speed}}</h5>
+                    <h5 class="card-text">Защита: {{defense}}</h5>
+                    <h5 class="card-text">Атака: {{attack}}</h5>
+                    <h5 class="card-text">Жизнь: {{hp}}</h5>
+                    <h5 class="card-text">Вес: {{weight}}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="text-center" style="margin-top: 10px">
+    <h4>Информация о покемоне сохранена!</h4>
+</div>
+<div class="text-center" style="margin-top: 10px">
+    <a href="{{ url_for('index') }}" style="margin-top: 5px" >На главную</a>
+</div>
+
+</body>
+</html>
