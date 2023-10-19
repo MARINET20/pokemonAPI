@@ -1,3 +1,4 @@
+import ftplib
 import math
 import os
 import random
@@ -7,6 +8,8 @@ import requests
 import json
 import psycopg2
 from flask_mail import Mail, Message
+from ftplib import FTP
+import markdown
 
 app = Flask(__name__)
 
@@ -238,13 +241,13 @@ def fight(name):
                            result=result, img=img, img_pokemon=img_pokemon)
 
 
-@app.route('/pokemon/<name>', methods=['GET'])
-def pokemon(name):
-    with open('pokemons.json') as json_file:
-        d = json.load(json_file)
-    # Нахождение покемона по имени в загруженных данных
-    pokemon = next((p for p in d if p['name'] == name), None)
-    return d
+# @app.route('/pokemon/<name>', methods=['GET'])
+# def pokemon(name):
+#     with open('pokemons.json') as json_file:
+#         d = json.load(json_file)
+#     # Нахождение покемона по имени в загруженных данных
+#     pokemon = next((p for p in d if p['name'] == name), None)
+#     return d
 
 
 @app.route('/fight/fast/<name>', methods=['GET', 'POST'])
@@ -278,7 +281,7 @@ def quickBattle(name):
 
                 cur = conn.cursor()
                 cur.execute(
-                    "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s,%s)",
+                    "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s, %s)",
                     (user_pokemon, opponent_pokemon, winner, datetime.datetime.now()))
                 conn.commit()
         else:
@@ -329,6 +332,75 @@ def quickBattle(name):
     return render_template('fightFast.html', result_text=result_text, opponent_pokemon=opponent_pokemon,
                            name=name, hp=hp, hp_pokemon=hp_pokemon, result=result, round_results=round_results,
                            img=img, img_pokemon=img_pokemon)
+
+
+@app.route('/pokemon/<name>', methods=['GET', 'POST'])
+def pokemon(name):
+    with open('pokemons.json') as json_file:
+        d = json.load(json_file)
+    # Нахождение покемона по имени в загруженных данных
+    pokemon = next((p for p in d if p['name'] == name), None)
+    return render_template('pokemonInfo.html', pokemon=pokemon)
+
+
+@app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>',  methods=['GET', 'POST'])
+def save(name, speed, hp, defense, attack, weight):
+    USERNAME = 'user'
+    PASSWORD = 'Chekanova2023@'
+    HOST = '192.168.1.7'
+
+    ftp = ftplib.FTP(HOST, USERNAME, PASSWORD)
+    files = ftp.nlst()
+    print(files)
+
+    markdown_text = f"# {name}\n\nСкорость: {speed}\n\nЖизнь: {hp}\n\nЗащита: {defense}" \
+                    f"\n\nАтака: {attack}\n\nВес: {weight}"
+
+    file_name = f"{name}.md"
+    current_date = datetime.datetime.now().strftime('%d.%m.%Y')
+
+    if current_date in ftp.nlst():
+        ftp.cwd(current_date)
+    else:
+        ftp.mkd(current_date)
+        ftp.cwd(current_date)
+
+    with open(current_date, 'wb') as f:
+        f.write(markdown_text.encode())
+    ftp.storbinary('STOR ' + file_name, open(current_date, 'rb'))
+
+    ftp.quit()
+
+    return render_template('savePokemon.html', name=name, speed=speed, hp=hp,
+                           defense=defense, attack=attack, weight=weight)
+
+
+# def save_pokemon_info(name, speed, hp, defense):
+#     USERNAME = 'user'
+#     PASSWORD = 'Chekanova2023@'
+#     HOST = '192.168.1.7'
+#
+#     ftp = ftplib.FTP(HOST, USERNAME, PASSWORD)
+#     files = ftp.nlst()
+#     print(files)
+#
+#     markdown_text = f"# {name}\n\nСкорость: {speed}\n\nЖизнь: {hp}\n\nЗащита: {defense}"
+#     html_text = markdown.markdown(markdown_text)
+#
+#     file_name = f"{name}.md"
+#     current_date = datetime.datetime.now().strftime('%d.%m.%Y')
+#
+#     if current_date in ftp.nlst():
+#         ftp.cwd(current_date)
+#     else:
+#         ftp.mkd(current_date)
+#         ftp.cwd(current_date)
+#
+#     with open(current_date, 'wb') as f:
+#         f.write(markdown_text.encode())
+#     ftp.storbinary('STOR ' + file_name, open(current_date, 'rb'))
+#
+#     ftp.quit()
 
 
 if __name__ == '__main__':
