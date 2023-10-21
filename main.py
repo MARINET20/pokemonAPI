@@ -322,7 +322,7 @@ def pokemon(name):
     return render_template('pokemonInfo.html', pokemon=pokemon)
 
 
-@app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>',  methods=['GET', 'POST'])
+@app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>', methods=['GET', 'POST'])
 def save(name, speed, hp, defense, attack, weight):
     USERNAME = ''
     PASSWORD = ''
