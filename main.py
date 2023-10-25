@@ -10,6 +10,7 @@ import psycopg2
 from flask_mail import Mail, Message
 from ftplib import FTP
 import markdown
+import redis
 
 app = Flask(__name__)
 
@@ -30,6 +31,7 @@ conn = psycopg2.connect(
     user="postgres",
     password="0000"
 )
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, charset="utf-8")
 
 
 def send_email(email, result_battle):
@@ -44,14 +46,31 @@ def send_email(email, result_battle):
         return "Сообщение не отправилось..."
 
 
-def save_most_recent_pokemon(d):
-    with open('pokemons.json', 'w') as f:
-        json.dump(d, f)
+def save_most_recent_pokemon(pokemon):
+    redis_client.set(pokemon['name'], json.dumps(pokemon))
+
+
+# def save_most_recent_pokemon(d):
+#     with open('pokemons.json', 'w') as f:
+#         json.dump(d, f)
 
 
 def load_most_recent_pokemon():
     with open('pokemons.json', 'r') as f:
         return json.load(f)
+
+
+def load_most_recent_pokemon_redis(name):
+    p_data = redis_client.get(name)
+    if p_data:
+        return json.loads(p_data)
+    else:
+        return None
+
+
+def delete_pokemon_data(name):
+    redis_client.delete(name)
+    print(f"{name} успешно удален")
 
 
 def is_json_empty():
@@ -86,27 +105,48 @@ names = [pokemon['name'] for pokemon in data['results']]
 
 @app.route('/', methods=['GET'])
 def index():
-    if is_json_empty == True:
-        poke = []
-        count = 1
-        for name in names:
-            pokemon_url = f'https://pokeapi.co/api/v2/pokemon/{name}'
-            r = requests.get(pokemon_url).json()
-            d = {
-                'id': r['id'],
-                'name': r['name'],
-                'speed': r['stats'][-1]['base_stat'],
-                'defense': r['stats'][2]['base_stat'],
-                'special_defense': r['stats'][4]['base_stat'],
-                'attack': r['stats'][1]['base_stat'],
-                'special_attack': r['stats'][3]['base_stat'],
-                'hp': r['stats'][0]['base_stat'],
-                'weight': r['weight'],
-                'image_url': r['sprites']['other']['dream_world']['front_default']
-            }
-            poke.append(d)
-            count += 1
-        save_most_recent_pokemon(poke)
+    # poke = []
+    # count = 1
+    # for name in names:
+    #     pokemon = load_most_recent_pokemon_redis(name)
+    #     if not pokemon:
+    #         pokemon_url = f'https://pokeapi.co/api/v2/pokemon/{name}'
+    #         r = requests.get(pokemon_url).json()
+    #         pokemon = {
+    #             'id': r['id'],
+    #             'name': r['name'],
+    #             'speed': r['stats'][-1]['base_stat'],
+    #             'defense': r['stats'][2]['base_stat'],
+    #             'special_defense': r['stats'][4]['base_stat'],
+    #             'attack': r['stats'][1]['base_stat'],
+    #             'special_attack': r['stats'][3]['base_stat'],
+    #             'hp': r['stats'][0]['base_stat'],
+    #             'weight': r['weight'],
+    #             'image_url': r['sprites']['other']['dream_world']['front_default']
+    #         }
+    #         save_most_recent_pokemon(pokemon)
+    #     poke.append(pokemon)
+    #     count += 1
+    # poke = []
+    # count = 1
+    # for name in names:
+    #     pokemon_url = f'https://pokeapi.co/api/v2/pokemon/{name}'
+    #     r = requests.get(pokemon_url).json()
+    #     d = {
+    #         'id': r['id'],
+    #         'name': r['name'],
+    #         'speed': r['stats'][-1]['base_stat'],
+    #         'defense': r['stats'][2]['base_stat'],
+    #         'special_defense': r['stats'][4]['base_stat'],
+    #         'attack': r['stats'][1]['base_stat'],
+    #         'special_attack': r['stats'][3]['base_stat'],
+    #         'hp': r['stats'][0]['base_stat'],
+    #         'weight': r['weight'],
+    #         'image_url': r['sprites']['other']['dream_world']['front_default']
+    #     }
+    #     poke.append(d)
+    #     count += 1
+    # save_most_recent_pokemon(poke)
 
     page = request.args.get('page', type=int, default=1)
     per_page = 6
@@ -136,17 +176,26 @@ def fight(name):
     global hp
     global attack_pokemon
     global hp_pokemon
-    global opponent_pokemon
+    global opponent_pokemon_name
     global user_pokemon
     global result
     global img
     global img_pokemon
 
     if request.method == 'GET':
-        opponent_pokemon = random.choice(names).upper()
-        attack, hp, img = pokemons_info_json(opponent_pokemon)
-        attack_pokemon, hp_pokemon, img_pokemon = pokemons_info_json(name)  # выбранный пользователем покемон
-        user_pokemon = name
+        # opponent_pokemon = random.choice(names).upper()
+        opponent_pokemon_name = random.choice(names)
+        #attack, hp, img = pokemons_info_json(opponent_pokemon_name)
+        opponent_pokemon_info = load_most_recent_pokemon_redis(opponent_pokemon_name)
+        attack = opponent_pokemon_info['attack']
+        hp = opponent_pokemon_info['hp']
+        img = opponent_pokemon_info['image_url']
+        #attack_pokemon, hp_pokemon, img_pokemon = pokemons_info_json(name)  # выбранный пользователем покемон
+        user_pokemon_info = load_most_recent_pokemon_redis(name)
+        attack_pokemon = user_pokemon_info['attack']
+        hp_pokemon = user_pokemon_info['hp']
+        img_pokemon = user_pokemon_info['image_url']
+        user_pokemon = user_pokemon_info['name']
         result = ''
     if request.method == 'POST':
         if hp <= 0 or hp_pokemon <= 0:
@@ -163,7 +212,7 @@ def fight(name):
                 result = "Ничья"
                 winner = "Ничья"
 
-            return render_template('fight.html', result_text=result_text, opponent_pokemon=opponent_pokemon, name=name,
+            return render_template('fight.html', result_text=result_text, opponent_pokemon_name=opponent_pokemon_name, name=name,
                                    hp=hp, hp_pokemon=hp_pokemon, result=result, img=img, img_pokemon=img_pokemon)
         else:
             user_input = int(request.form['submit'])
@@ -182,7 +231,7 @@ def fight(name):
                     cur = conn.cursor()
                     cur.execute(
                         "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s,%s)",
-                        (user_pokemon, opponent_pokemon, winner, datetime.datetime.now()))
+                        (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now()))
                     conn.commit()
             else:
                 hp_pokemon = hp_pokemon - attack
@@ -195,7 +244,7 @@ def fight(name):
                     cur = conn.cursor()
                     cur.execute(
                         "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s,%s)",
-                        (user_pokemon, opponent_pokemon, winner, datetime.datetime.now()))
+                        (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now()))
                     conn.commit()
             print(hp, hp_pokemon)
             round_results.append({
@@ -208,7 +257,7 @@ def fight(name):
                 'result_text': result_text
             })
 
-            return render_template('fight.html', result_text=result_text, opponent_pokemon=opponent_pokemon, name=name,
+            return render_template('fight.html', result_text=result_text, opponent_pokemon_name=opponent_pokemon_name, name=name,
                                    hp=hp, hp_pokemon=hp_pokemon, result=result, img=img, img_pokemon=img_pokemon)
 
     # return redirect(url_for('result.html'))
@@ -216,7 +265,7 @@ def fight(name):
     # return redirect(url_for('index'))  # изменили на перенаправление на
 
     round_results.clear()  # Очищаем результаты перед началом новой игры
-    return render_template('fight.html', opponent_pokemon=opponent_pokemon, name=name, hp=hp, hp_pokemon=hp_pokemon,
+    return render_template('fight.html', opponent_pokemon_name=opponent_pokemon_name, name=name, hp=hp, hp_pokemon=hp_pokemon,
                            result=result, img=img, img_pokemon=img_pokemon)
 
 
@@ -235,15 +284,24 @@ def quickBattle(name):
     global hp
     global attack_pokemon
     global hp_pokemon
-    global opponent_pokemon
+    global opponent_pokemon_name
     global user_pokemon
     global result
     global img
     global img_pokemon
     # opponent_pokemon = random.choice(names).upper()
-    attack, hp, img = pokemons_info_json(opponent_pokemon)
-    attack_pokemon, hp_pokemon, img_pokemon = pokemons_info_json(name)  # выбранный пользователем покемон
-    user_pokemon = name
+    #attack, hp, img = pokemons_info_json(opponent_pokemon)
+    opponent_pokemon_info = load_most_recent_pokemon_redis(opponent_pokemon_name)
+    attack = opponent_pokemon_info['attack']
+    hp = opponent_pokemon_info['hp']
+    img = opponent_pokemon_info['image_url']
+    #attack_pokemon, hp_pokemon, img_pokemon = pokemons_info_json(name)  # выбранный пользователем покемон
+    user_pokemon_info = load_most_recent_pokemon_redis(name)
+    attack_pokemon = user_pokemon_info['attack']
+    hp_pokemon = user_pokemon_info['hp']
+    img_pokemon = user_pokemon_info['image_url']
+    user_pokemon = user_pokemon_info['name']
+    print(user_pokemon)
     result = ''
     while hp > 0 and hp_pokemon > 0:
         user_input = random.randint(1, 10)
@@ -261,7 +319,7 @@ def quickBattle(name):
                 cur = conn.cursor()
                 cur.execute(
                     "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s, %s)",
-                    (user_pokemon, opponent_pokemon, winner, datetime.datetime.now()))
+                    (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now()))
                 conn.commit()
         else:
             hp_pokemon = hp_pokemon - attack
@@ -274,7 +332,7 @@ def quickBattle(name):
                 cur = conn.cursor()
                 cur.execute(
                     "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s,%s)",
-                    (user_pokemon, opponent_pokemon, winner, datetime.datetime.now()))
+                    (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now()))
                 conn.commit()
 
         round_results.append({
@@ -304,25 +362,24 @@ def quickBattle(name):
             print(email)
             result_text_message = send_email(email, result)
 
-        return render_template('fightFast.html', result_text=result_text, opponent_pokemon=opponent_pokemon,
+        return render_template('fightFast.html', result_text=result_text, opponent_pokemon=opponent_pokemon_name,
                                name=name, hp=hp, hp_pokemon=hp_pokemon, result=result, round_results=round_results,
                                img=img, img_pokemon=img_pokemon, result_text_message=result_text_message)
 
-    return render_template('fightFast.html', result_text=result_text, opponent_pokemon=opponent_pokemon,
+    return render_template('fightFast.html', result_text=result_text, opponent_pokemon=opponent_pokemon_name,
                            name=name, hp=hp, hp_pokemon=hp_pokemon, result=result, round_results=round_results,
                            img=img, img_pokemon=img_pokemon)
 
 
 @app.route('/pokemon/<name>', methods=['GET', 'POST'])
 def pokemon(name):
-    with open('pokemons.json') as json_file:
-        d = json.load(json_file)
-    # Нахождение покемона по имени в загруженных данных
-    pokemon = next((p for p in d if p['name'] == name), None)
+    pokemon = load_most_recent_pokemon_redis(name)
+    if not pokemon:
+        return None
     return render_template('pokemonInfo.html', pokemon=pokemon)
 
 
-@app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>',  methods=['GET', 'POST'])
+@app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>', methods=['GET', 'POST'])
 def save(name, speed, hp, defense, attack, weight):
     USERNAME = ''
     PASSWORD = ''
