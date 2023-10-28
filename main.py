@@ -105,28 +105,28 @@ names = [pokemon['name'] for pokemon in data['results']]
 
 @app.route('/', methods=['GET'])
 def index():
-    # poke = []
-    # count = 1
-    # for name in names:
-    #     pokemon = load_most_recent_pokemon_redis(name)
-    #     if not pokemon:
-    #         pokemon_url = f'https://pokeapi.co/api/v2/pokemon/{name}'
-    #         r = requests.get(pokemon_url).json()
-    #         pokemon = {
-    #             'id': r['id'],
-    #             'name': r['name'],
-    #             'speed': r['stats'][-1]['base_stat'],
-    #             'defense': r['stats'][2]['base_stat'],
-    #             'special_defense': r['stats'][4]['base_stat'],
-    #             'attack': r['stats'][1]['base_stat'],
-    #             'special_attack': r['stats'][3]['base_stat'],
-    #             'hp': r['stats'][0]['base_stat'],
-    #             'weight': r['weight'],
-    #             'image_url': r['sprites']['other']['dream_world']['front_default']
-    #         }
-    #         save_most_recent_pokemon(pokemon)
-    #     poke.append(pokemon)
-    #     count += 1
+    poke = []
+    count = 1
+    for name in names:
+        pokemon = load_most_recent_pokemon_redis(name)
+        if not pokemon:
+            pokemon_url = f'https://pokeapi.co/api/v2/pokemon/{name}'
+            r = requests.get(pokemon_url).json()
+            pokemon = {
+                'id': r['id'],
+                'name': r['name'],
+                'speed': r['stats'][-1]['base_stat'],
+                'defense': r['stats'][2]['base_stat'],
+                'special_defense': r['stats'][4]['base_stat'],
+                'attack': r['stats'][1]['base_stat'],
+                'special_attack': r['stats'][3]['base_stat'],
+                'hp': r['stats'][0]['base_stat'],
+                'weight': r['weight'],
+                'image_url': r['sprites']['other']['dream_world']['front_default']
+            }
+            save_most_recent_pokemon(pokemon)
+        poke.append(pokemon)
+        count += 1
     # poke = []
     # count = 1
     # for name in names:
