@@ -26,10 +26,11 @@ mail = Mail(app)
 
 # Подключение к БД
 conn = psycopg2.connect(
-    host="localhost",
-    database="Pokemons",
-    user="postgres",
-    password="0000"
+    #host="localhost",
+    host='postgres',
+    database='Pokemons',
+    user='postgres',
+    password='0000'
 )
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, charset="utf-8")
 
