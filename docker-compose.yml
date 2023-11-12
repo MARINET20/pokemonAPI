@@ -7,16 +7,14 @@ services:
     environment:
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=True
-    restart: on-failure
     volumes:
       - .:/app
     ports:
-      - "5000:5000"
-    command: python manage.py runserver 0.0.0.0:5000
-
+      - 5000:5000
+    command: python main.py
     depends_on:
-      - redis
       - postgres
+      - redis
 
   postgres:
     env_file: ./docker/.env-postgresql
@@ -24,14 +22,29 @@ services:
     image: postgres:14
     volumes:
       - flaskdb:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     restart: unless-stopped
+    networks:
+      - db-conn
 
   redis:
     env_file:
       - ./docker/.env
     image: redis
     container_name: redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+        - redis-conn
+
+volumes:
+  flaskdb:
+  redis-data:
+
+networks:
+  db-conn:
+    driver: bridge
+  redis-conn:
+    driver: bridge

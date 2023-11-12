@@ -26,8 +26,7 @@ mail = Mail(app)
 
 # Подключение к БД
 conn = psycopg2.connect(
-    #host="localhost",
-    host='postgres',
+    host="localhost",
     database='Pokemons',
     user='postgres',
     password='0000'
