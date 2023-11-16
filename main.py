@@ -109,6 +109,7 @@ def index():
     count = 1
     for name in names:
         pokemon = load_most_recent_pokemon_redis(name)
+        #print(pokemon)
         if not pokemon:
             pokemon_url = f'https://pokeapi.co/api/v2/pokemon/{name}'
             r = requests.get(pokemon_url).json()
@@ -172,6 +173,7 @@ round_results = []
 
 @app.route('/fight/<name>', methods=['GET', 'POST'])
 def fight(name):
+    name = name.lower()
     global attack
     global hp
     global attack_pokemon
@@ -280,6 +282,7 @@ def fight(name):
 
 @app.route('/fight/fast/<name>', methods=['GET', 'POST'])
 def quickBattle(name):
+    name = name.lower()
     global attack
     global hp
     global attack_pokemon
@@ -373,7 +376,9 @@ def quickBattle(name):
 
 @app.route('/pokemon/<name>', methods=['GET', 'POST'])
 def pokemon(name):
-    pokemon = load_most_recent_pokemon_redis(name)
+    #print(name.lower())
+    pokemon = load_most_recent_pokemon_redis(name.lower())
+    #print(pokemon)
     if not pokemon:
         return None
     return render_template('pokemonInfo.html', pokemon=pokemon)
@@ -381,6 +386,7 @@ def pokemon(name):
 
 @app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>', methods=['GET', 'POST'])
 def save(name, speed, hp, defense, attack, weight):
+    name = name.lower()
     USERNAME = ''
     PASSWORD = ''
     HOST = ''
