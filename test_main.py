@@ -14,21 +14,36 @@ class TestPokemonAPI(unittest.TestCase):
         response = self.app.get('/', query_string=self.filters)
         self.assertEqual(response.status_code, 200)
 
-    # def test_get_pokemon_by_id(self):
-    #     pokemon_id = 1
-    #     response = self.app.get(f'/pokemon/{pokemon_id}')
-    #     self.assertEqual(response.status_code, 200)
-    #
-    # def test_get_random_pokemon(self):
-    #     response = self.app.get('/pokemon/random')
-    #     self.assertEqual(response.status_code, 200)
-    #
-    # def test_get_fight_info(self):
-    #     user_pokemon_id = 1
-    #     opponent_pokemon_id = 2
-    #     response = self.app.get(f'/fight?user_pokemon={user_pokemon_id}&opponent_pokemon={opponent_pokemon_id}')
-    #     self.assertEqual(response.status_code, 200)
-    #
+    def test_get_pokemon_by_name(self):
+        pokemon_name = "pikachu"
+        response = self.app.get(f'/pokemon/{pokemon_name}')
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_fight_info(self):
+        user_pokemon_name = "pikachu"
+        response = self.app.get(f'/fight/{user_pokemon_name}')
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_fight_info(self):
+        user_pokemon_name = "pikachu"
+        response = self.app.post(f'/fight/{user_pokemon_name}')
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_quick_battle(self):
+        name = "pikachu"
+        response = self.app.get(f'/fight/fast/{name}')
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_quick_battle(self):
+        name = "pikachu"
+        response = self.app.post(f'/fight/fast/{name}')
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_pokemon_list_page(self):
+        page_id = 2
+        response = self.app.get(f'/?page={page_id}')
+        self.assertEqual(response.status_code, 200)
+
     # def test_post_fight(self):
     #     user_input = 3
     #     response = self.app.post(f'/fight/{user_input}')
