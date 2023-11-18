@@ -11,8 +11,14 @@ from flask_mail import Mail, Message
 from ftplib import FTP
 import markdown
 import redis
+import configparser
 
 app = Flask(__name__)
+
+# config = configparser.ConfigParser()
+# config.read('config.ini')
+# print(config.read('config.ini'))
+# print(config.get('Email', 'EMAIL_USERNAME'))
 
 # Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -32,6 +38,10 @@ conn = psycopg2.connect(
     password='0000'
 )
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, charset="utf-8")
+
+
+def run_flask_server():
+    app.run(port=5000)
 
 
 def send_email(email, result_battle):
@@ -127,26 +137,6 @@ def index():
             save_most_recent_pokemon(pokemon)
         poke.append(pokemon)
         count += 1
-    # poke = []
-    # count = 1
-    # for name in names:
-    #     pokemon_url = f'https://pokeapi.co/api/v2/pokemon/{name}'
-    #     r = requests.get(pokemon_url).json()
-    #     d = {
-    #         'id': r['id'],
-    #         'name': r['name'],
-    #         'speed': r['stats'][-1]['base_stat'],
-    #         'defense': r['stats'][2]['base_stat'],
-    #         'special_defense': r['stats'][4]['base_stat'],
-    #         'attack': r['stats'][1]['base_stat'],
-    #         'special_attack': r['stats'][3]['base_stat'],
-    #         'hp': r['stats'][0]['base_stat'],
-    #         'weight': r['weight'],
-    #         'image_url': r['sprites']['other']['dream_world']['front_default']
-    #     }
-    #     poke.append(d)
-    #     count += 1
-    # save_most_recent_pokemon(poke)
 
     page = request.args.get('page', type=int, default=1)
     per_page = 6
@@ -182,22 +172,17 @@ def fight(name):
     global result
     global img
     global img_pokemon
-
-    if request.method == 'GET':
-        # opponent_pokemon = random.choice(names).upper()
-        opponent_pokemon_name = random.choice(names)
-        #attack, hp, img = pokemons_info_json(opponent_pokemon_name)
-        opponent_pokemon_info = load_most_recent_pokemon_redis(opponent_pokemon_name)
-        attack = opponent_pokemon_info['attack']
-        hp = opponent_pokemon_info['hp']
-        img = opponent_pokemon_info['image_url']
-        #attack_pokemon, hp_pokemon, img_pokemon = pokemons_info_json(name)  # выбранный пользователем покемон
-        user_pokemon_info = load_most_recent_pokemon_redis(name)
-        attack_pokemon = user_pokemon_info['attack']
-        hp_pokemon = user_pokemon_info['hp']
-        img_pokemon = user_pokemon_info['image_url']
-        user_pokemon = user_pokemon_info['name']
-        result = ''
+    opponent_pokemon_name = random.choice(names)
+    opponent_pokemon_info = load_most_recent_pokemon_redis(opponent_pokemon_name)
+    attack = opponent_pokemon_info['attack']
+    hp = opponent_pokemon_info['hp']
+    img = opponent_pokemon_info['image_url']
+    user_pokemon_info = load_most_recent_pokemon_redis(name)
+    attack_pokemon = user_pokemon_info['attack']
+    hp_pokemon = user_pokemon_info['hp']
+    img_pokemon = user_pokemon_info['image_url']
+    user_pokemon = user_pokemon_info['name']
+    result = ''
     if request.method == 'POST':
         if hp <= 0 or hp_pokemon <= 0:
             print(hp, hp_pokemon, " sorry")
@@ -213,7 +198,8 @@ def fight(name):
                 result = "Ничья"
                 winner = "Ничья"
 
-            return render_template('fight.html', result_text=result_text, opponent_pokemon_name=opponent_pokemon_name, name=name,
+            return render_template('fight.html', result_text=result_text, opponent_pokemon_name=opponent_pokemon_name,
+                                   name=name,
                                    hp=hp, hp_pokemon=hp_pokemon, result=result, img=img, img_pokemon=img_pokemon)
         else:
             user_input = int(request.form['submit'])
@@ -258,7 +244,8 @@ def fight(name):
                 'result_text': result_text
             })
 
-            return render_template('fight.html', result_text=result_text, opponent_pokemon_name=opponent_pokemon_name, name=name,
+            return render_template('fight.html', result_text=result_text, opponent_pokemon_name=opponent_pokemon_name,
+                                   name=name,
                                    hp=hp, hp_pokemon=hp_pokemon, result=result, img=img, img_pokemon=img_pokemon)
 
     # return redirect(url_for('result.html'))
@@ -266,7 +253,8 @@ def fight(name):
     # return redirect(url_for('index'))  # изменили на перенаправление на
 
     round_results.clear()  # Очищаем результаты перед началом новой игры
-    return render_template('fight.html', opponent_pokemon_name=opponent_pokemon_name, name=name, hp=hp, hp_pokemon=hp_pokemon,
+    return render_template('fight.html', opponent_pokemon_name=opponent_pokemon_name, name=name, hp=hp,
+                           hp_pokemon=hp_pokemon,
                            result=result, img=img, img_pokemon=img_pokemon)
 
 
@@ -292,12 +280,12 @@ def quickBattle(name):
     global img
     global img_pokemon
     # opponent_pokemon = random.choice(names).upper()
-    #attack, hp, img = pokemons_info_json(opponent_pokemon)
+    # attack, hp, img = pokemons_info_json(opponent_pokemon)
     opponent_pokemon_info = load_most_recent_pokemon_redis(opponent_pokemon_name)
     attack = opponent_pokemon_info['attack']
     hp = opponent_pokemon_info['hp']
     img = opponent_pokemon_info['image_url']
-    #attack_pokemon, hp_pokemon, img_pokemon = pokemons_info_json(name)  # выбранный пользователем покемон
+    # attack_pokemon, hp_pokemon, img_pokemon = pokemons_info_json(name)  # выбранный пользователем покемон
     user_pokemon_info = load_most_recent_pokemon_redis(name)
     attack_pokemon = user_pokemon_info['attack']
     hp_pokemon = user_pokemon_info['hp']
@@ -385,9 +373,9 @@ def pokemon(name):
 @app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>', methods=['GET', 'POST'])
 def save(name, speed, hp, defense, attack, weight):
     name = name.lower()
-    USERNAME = ''
+    USERNAME = 'user'
     PASSWORD = ''
-    HOST = ''
+    HOST = 'localhost'
 
     ftp = ftplib.FTP(HOST, USERNAME, PASSWORD)
     files = ftp.nlst()

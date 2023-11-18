@@ -13,7 +13,7 @@
    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-5 box-shadow-nav" style="height: 80px">
        <a class="navbar-brand" href="#">Покемоны</a>
            <form class="form-inline my-5 my-lg-0" method="get">
-               <input class="form-control mr-sm-3" type="search" placeholder="Введите имя покемона" name="q" value="{{ search_query }}" style="width: 300px;height: 40px;font-size:20px;">
+               <input class="form-control mr-sm-3" type="search" id="search" placeholder="Введите имя покемона" name="q" value="{{ search_query }}" style="width: 300px;height: 40px;font-size:20px;">
                <button class="btn btn-outline-success my-2 my-sm-0" type="submit" style="font-size: 17px">Поиск</button>
            </form>
    </nav>
@@ -23,16 +23,16 @@
            {% for pokemon in pokemons %}
            <div class="col-md-4" style="height: 80%; margin-top: 10px">
                <div class="card box-shadow-nav">
-               <div class="aspect-ratio-box">
-               <a href="{{ url_for('pokemon', name=pokemon.name) }}"><img src="{{ pokemon.image_url }}"  data-bs-toggle="modal" data-bs-target="#exampleModal"  alt="{{pokemon.name}}"  style="width: 100%" /></a>
+                   <div class="aspect-ratio-box">
+                   <a href="{{ url_for('pokemon', name=pokemon.name) }}"><img src="{{ pokemon.image_url }}"  data-bs-toggle="modal" data-bs-target="#exampleModal"  alt="{{pokemon.name}}"  style="width: 100%" /></a>
+                   </div>
+                   <div class="card-body">
+                       <a href="{{ url_for('pokemon', name=pokemon.name) }}"><h4 class="card-title" id="name" data-bs-toggle="modal" data-bs-target="#exampleModal">{{pokemon.name}}</h4></a>
+                       <h5 class="card-text" id="speed"> Скорость: {{pokemon.speed}}</h5>
+                       <h5 class="card-text" id="defense"> Защита: {{pokemon.defense}}</h5>
+                       <a href="{{ url_for('fight', name=pokemon.name) }}"  onclick="savePokemonName('{{pokemon.name}}','{{pokemon.image_url}}','{{pokemon.attack}}','{{pokemon.defense}}')" class="btn btn-success" style="font-size: 120%">Выбрать</a>
+                   </div>
                </div>
-               <div class="card-body">
-                   <a href="{{ url_for('pokemon', name=pokemon.name) }}"><h4 class="card-title" id="name" data-bs-toggle="modal" data-bs-target="#exampleModal">{{pokemon.name}}</h4></a>
-                   <h5 class="card-text" id="speed"> Скорость: {{pokemon.speed}}</h5>
-                   <h5 class="card-text" id="defense"> Защита: {{pokemon.defense}}</h5>
-                   <a href="{{ url_for('fight', name=pokemon.name) }}"  onclick="savePokemonName('{{pokemon.name}}','{{pokemon.image_url}}','{{pokemon.attack}}','{{pokemon.defense}}')" class="btn btn-success" style="font-size: 120%">Выбрать</a>
-               </div>
-           </div>
            </div>
            {% endfor %}
        </div>
