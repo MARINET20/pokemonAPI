@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link rel="stylesheet" href="../static/style.css">
+    <title>{{title}}</title>
+</head>
+<body>
+    <div class="row mt-5">
+        <div class="col-md-8 offset-md-2">
+           <form method="post">
+                <div class="form-outline mb-4">
+                    <input type="password" id="psw" name="psw" class="form-control" required placeholder="Введите пароль из сообщения"/>
+                </div>
+                <!-- Submit button -->
+                <button type="submit" class="btn btn-primary btn-block mb-4">Зарегистрироваться</button>
+            </form>
+            <a href="{{ url_for('login') }}">Назад</a>
+        </div>
+    </div>
+</body>
+</html>

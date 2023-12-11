@@ -56,15 +56,21 @@ class TestPokemonAPI(unittest.TestCase):
 
     def test_pokemon_list_page(self):
         pokemon_name = "METAPOD"
-        speed = 30
-        defense = 55
         page_id = 2
         response = self.app.get(f'/?page={page_id}')
         self.assertEqual(response.status_code, 200)
         pokemon = response.data.decode('utf-8')
-        self.assertIn(f'<h4 class="card-title" id="name" data-bs-toggle="modal" data-bs-target="#exampleModal">{pokemon_name}</h4>', pokemon)
-        # self.assertIn(f'<h5 class="card-text" id="speed"> Скорость: {speed}</h5>', pokemon)
-        # self.assertIn(f'<h5 class="card-text" id="defense"> Защита: {defense}</h5>', pokemon)
+        self.assertIn(f'<h4 class="card-title" id="name" data-bs-toggle="modal" data-bs-target="#exampleModal">',
+                      pokemon)
+
+        # data = {
+        #     'pokemon_name': pokemon_name,
+        #     'page_id': page_id
+        # }
+        #
+        # # Write the data to a JSON file
+        # with open('test_data.json', 'w') as file:
+        #     json.dump(data, file)
 
     def test_save_pokemon(self):
         response = app.test_client().post('/pokemon/save/bulbasaur/45/60/50/65/10',

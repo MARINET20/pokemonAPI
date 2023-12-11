@@ -1,19 +1,27 @@
+import datetime
 import ftplib
+import json
 import math
 import os
 import random
-import datetime
-from flask import Flask, jsonify, render_template, request, redirect, url_for
-import requests
-import json
+from audioop import reverse
+from urllib.parse import urlencode
+
 import psycopg2
-from flask_mail import Mail, Message
-from ftplib import FTP
-import markdown
 import redis
-import configparser
+import requests
+from flask import Flask, render_template, request, flash, redirect, url_for, g, session
+from flask_mail import Mail, Message
+import werkzeug
+from prometheus_flask_exporter import PrometheusMetrics
+from requests import post
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, login_required, logout_user, login_user, current_user
+import uuid
 
 app = Flask(__name__)
+login_manager = LoginManager(app)
+metrics = PrometheusMetrics(app)
 
 # config = configparser.ConfigParser()
 # config.read('config.ini')
@@ -27,8 +35,16 @@ app.config['MAIL_USERNAME'] = ''
 app.config['MAIL_PASSWORD'] = ''
 # app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = True
-
+app.config['SECRET_KEY'] = ''
+CLIENTID = ''
+CLIENT_SECRET = ''
 mail = Mail(app)
+
+
+@login_manager.user_loader
+def load_user(id):
+    return UserLogin().fromDB(id)
+
 
 # Подключение к БД
 conn = psycopg2.connect(
@@ -52,6 +68,18 @@ def send_email(email, result_battle):
         msg.body = result_battle
         mail.send(msg)
         return f"Результат отправлен на почту {email}"
+    except Exception as e:
+        return "Сообщение не отправилось..."
+
+
+def send_psw_to_email(email, random_psw):
+    message = "Битва Покемонов"
+    try:
+        msg = Message(message, sender='pokemon@demo.com',
+                      recipients=[email])
+        msg.body = random_psw
+        mail.send(msg)
+        return "Введите пароль из сообщения"
     except Exception as e:
         return "Сообщение не отправилось..."
 
@@ -113,10 +141,18 @@ results = data['results']
 names = [pokemon['name'] for pokemon in data['results']]
 
 
+@app.before_request
+def before_request():
+    g.user = current_user
+    if g.user.is_authenticated:
+        g.search_form = None
+
+
 @app.route('/', methods=['GET'])
 def index():
     poke = []
     count = 1
+    user = g.user
     for name in names:
         pokemon = load_most_recent_pokemon_redis(name)
         if not pokemon:
@@ -154,7 +190,8 @@ def index():
     end = start + per_page
     pokemons = pokemons[start:end]
 
-    return render_template('index.html', pokemons=pokemons, search_query=q, current_page=page, total_pages=total_pages)
+    return render_template('index.html', pokemons=pokemons, search_query=q, current_page=page, total_pages=total_pages,
+                           user=user)
 
 
 round_results = []
@@ -183,74 +220,67 @@ def fight(name):
     img_pokemon = user_pokemon_info['image_url']
     user_pokemon = user_pokemon_info['name']
     result = ''
+    rounds = 0
     if request.method == 'POST':
         if hp <= 0 or hp_pokemon <= 0:
-            print(hp, hp_pokemon, " sorry")
-            # вычисляем итоговый результат
             result_text = "Игра окончена!"
             if hp < hp_pokemon:
                 result = "Вы победили!"
-                winner = "Пользователь"
+                winner = name
             elif hp > hp_pokemon:
                 result = "Вы проиграли..."
-                winner = "Враг"
+                winner = opponent_pokemon_name
             else:
                 result = "Ничья"
                 winner = "Ничья"
-
             return render_template('fight.html', result_text=result_text, opponent_pokemon_name=opponent_pokemon_name,
                                    name=name,
                                    hp=hp, hp_pokemon=hp_pokemon, result=result, img=img, img_pokemon=img_pokemon)
         else:
             user_input = int(request.form['submit'])
             opponent_number = random.randint(1, 10)
-
-            print(hp, hp_pokemon)
+            rounds += 1
             if user_input % 2 == opponent_number % 2:
-                # отнимаем от жизни оппонента кол-во атак пользовательского покемона
                 hp = hp - attack_pokemon
                 result_text = "Покемон пользователя наносит удар!"
                 if hp <= 0:
                     result = "Вы победили!"
-                    winner = "Пользователь"
+                    winner = name
                     result_text = "Игра окончена!"
 
                     cur = conn.cursor()
                     cur.execute(
-                        "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s,%s)",
-                        (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now()))
+                        "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date, rounds) "
+                        "VALUES (%s, %s, %s,%s, %s)",
+                        (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now(), rounds))
                     conn.commit()
             else:
                 hp_pokemon = hp_pokemon - attack
                 result_text = " Противник бьёт!"
                 if hp_pokemon <= 0:
                     result = "Вы проиграли..."
-                    winner = "Враг"
+                    winner = opponent_pokemon_name
                     result_text = "Игра окончена!"
 
                     cur = conn.cursor()
                     cur.execute(
-                        "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s,%s)",
-                        (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now()))
+                        "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date, rounds) "
+                        "VALUES (%s, %s, %s,%s, %s)",
+                        (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now(), rounds))
                     conn.commit()
-            print(hp, hp_pokemon)
-            round_results.append({
-                'user_input': user_input,  # вводимое число пользователя
-                'opponent_number': opponent_number,  # рандомное число компьютера
-                'hp': hp,
-                'hp_pokemon': hp_pokemon,
-                'attack': attack,
-                'attack_pokemon': attack_pokemon,
-                'result_text': result_text
-            })
+            # round_results.append({
+            #     'user_input': user_input,  # вводимое число пользователя
+            #     'opponent_number': opponent_number,  # рандомное число компьютера
+            #     'hp': hp,
+            #     'hp_pokemon': hp_pokemon,
+            #     'attack': attack,
+            #     'attack_pokemon': attack_pokemon,
+            #     'result_text': result_text
+            # })
 
             return render_template('fight.html', result_text=result_text, opponent_pokemon_name=opponent_pokemon_name,
                                    name=name,
                                    hp=hp, hp_pokemon=hp_pokemon, result=result, img=img, img_pokemon=img_pokemon)
-
-    # return redirect(url_for('result.html'))
-
-    # return redirect(url_for('index'))  # изменили на перенаправление на
 
     round_results.clear()  # Очищаем результаты перед началом новой игры
     return render_template('fight.html', opponent_pokemon_name=opponent_pokemon_name, name=name, hp=hp,
@@ -279,69 +309,55 @@ def quickBattle(name):
     global result
     global img
     global img_pokemon
-    # opponent_pokemon = random.choice(names).upper()
-    # attack, hp, img = pokemons_info_json(opponent_pokemon)
     opponent_pokemon_info = load_most_recent_pokemon_redis(opponent_pokemon_name)
     attack = opponent_pokemon_info['attack']
     hp = opponent_pokemon_info['hp']
     img = opponent_pokemon_info['image_url']
-    # attack_pokemon, hp_pokemon, img_pokemon = pokemons_info_json(name)  # выбранный пользователем покемон
     user_pokemon_info = load_most_recent_pokemon_redis(name)
     attack_pokemon = user_pokemon_info['attack']
     hp_pokemon = user_pokemon_info['hp']
     img_pokemon = user_pokemon_info['image_url']
     user_pokemon = user_pokemon_info['name']
-    print(user_pokemon)
     result = ''
+    rounds = 0
     while hp > 0 and hp_pokemon > 0:
         user_input = random.randint(1, 10)
         opponent_number = random.randint(1, 10)
-
-        # print(user_input,opponent_number)
+        rounds += 1
         if user_input % 2 == opponent_number % 2:
             hp = hp - attack_pokemon
-            result_text = "Покемон пользователя наносит удар!"
             if hp <= 0:
                 result = "Вы победили!"
-                winner = "Пользователь"
+                winner = name
                 result_text = "Игра окончена!"
 
                 cur = conn.cursor()
                 cur.execute(
-                    "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s, %s)",
-                    (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now()))
+                    "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date, rounds) "
+                    "VALUES (%s, %s, %s, %s, %s)",
+                    (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now(), rounds))
                 conn.commit()
         else:
             hp_pokemon = hp_pokemon - attack
-            result_text = " Противник бьёт!"
             if hp_pokemon <= 0:
                 result = "Вы проиграли..."
-                winner = "Враг"
+                winner = opponent_pokemon_name
                 result_text = "Игра окончена!"
 
                 cur = conn.cursor()
                 cur.execute(
-                    "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date) VALUES (%s, %s, %s,%s)",
-                    (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now()))
+                    "INSERT INTO results (user_pokemon, opponent_pokemon, winner, date, rounds) "
+                    "VALUES (%s, %s, %s,%s, %s)",
+                    (user_pokemon, opponent_pokemon_name, winner, datetime.datetime.now(), rounds))
                 conn.commit()
-
-        round_results.append({
-            'user_input': user_input,
-            'opponent_number': opponent_number,
-            'hp': hp,
-            'hp_pokemon': hp_pokemon,
-            'attack': attack,
-            'attack_pokemon': attack_pokemon,
-            'result_text': result_text
-        })
 
     result_text = "Игра окончена!"
     if hp < hp_pokemon:
         result = "Вы победили!"
-        winner = "Пользователь"
+        winner = name
     elif hp > hp_pokemon:
         result = "Вы проиграли..."
-        winner = "Враг"
+        winner = opponent_pokemon_name
     else:
         result = "Ничья"
         winner = "Ничья"
@@ -373,7 +389,7 @@ def pokemon(name):
 @app.route('/pokemon/save/<name>/<speed>/<hp>/<defense>/<attack>/<weight>', methods=['GET', 'POST'])
 def save(name, speed, hp, defense, attack, weight):
     name = name.lower()
-    USERNAME = 'user'
+    USERNAME = ''
     PASSWORD = ''
     HOST = 'localhost'
 
@@ -401,6 +417,240 @@ def save(name, speed, hp, defense, attack, weight):
 
     return render_template('savePokemon.html', name=name, speed=speed, hp=hp,
                            defense=defense, attack=attack, weight=weight)
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    result_text_message = ''
+    global random_number
+    global user
+    if request.method == 'POST':
+        user = getUserByEmail(request.form['email'])
+        password = getUserByPassword(request.form['email'])
+        id = getUserById(request.form['email'])
+        random_number = str(random.randint(10000, 99999))
+        email = request.form.get('email')
+        if user and check_password_hash(password, request.form['psw']):
+            result_text_message = send_psw_to_email(email, random_number)
+            return redirect(url_for('oauth'))
+
+    return render_template('login.html')
+
+
+@app.route('/oauth', methods=['GET', 'POST'])
+def oauth():
+    if request.method == 'POST':
+        entered_psw = request.form.get('psw')
+        if random_number == entered_psw:
+            userlogin = UserLogin().create(user)
+            rm = True
+            login_user(userlogin, rm)
+            return render_template('account.html')
+
+    return render_template('oauth.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return render_template('login.html')
+
+
+@app.route('/account')
+@login_required
+def account():
+    return render_template('account.html')
+
+
+@app.route('/registration', methods=['GET', 'POST'])
+def registration():
+    global date
+    global nameUser
+    global emailUser
+    global pswUser
+    date = str(random.randint(10000, 99999))
+    if request.method == 'POST':
+        if len(request.form['name']) > 4 and len(request.form['email']) > 4 \
+                and len(request.form['psw']) > 4 and request.form['psw'] == request.form['psw2']:
+            hash = generate_password_hash(request.form['psw'])
+            res = addUser(request.form['email'])
+            if res:
+                email = request.form.get('email')
+                result_text_message = send_psw_to_email(email, date)
+                nameUser = request.form['name']
+                emailUser = email
+                pswUser = hash
+                return redirect(url_for('callback'))
+
+            else:
+                count = 1
+                message_text = "Пользователь с такой почтой уже существует!"
+                render_template('registration.html', message_text=message_text, title='Registration')
+        else:
+            message_text = "Неверное заполнение поля"
+            render_template('registration.html', message_text=message_text, title='Registration')
+
+    return render_template('registration.html', title='Registration')
+
+
+@app.route('/callback', methods=['GET', 'POST'])
+def callback():
+    if request.method == 'POST':
+        entered_psw = request.form.get('psw')
+        if date == entered_psw:
+            addUserDB(nameUser, emailUser, pswUser)
+            return redirect(url_for('login'))
+
+    return render_template('callback.html', title='Registration')
+
+
+@app.route('/recover/password', methods=['GET', 'POST'])
+def forgotPassword():
+    global password
+    global hash
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        getPassword = getUserByEmail(email)[2]
+        if getPassword == request.form['email'] \
+                and len(request.form['psw']) > 4 and request.form['psw'] == request.form['psw2']:
+            hash = generate_password_hash(request.form['psw'])
+            random_psw = str(random.randint(10000, 99999))
+            rndText = send_psw_to_email(email, random_psw)
+            redirect(url_for('sendPassword'))
+    return render_template('password/forgotPassword.html', title='Восстановление пароля')
+
+
+@app.route('/recover/password/input', methods=['GET', 'POST'])
+def sendPassword():
+    return render_template('password/forgotPassword.html', title='Восстановление пароля')
+
+
+@app.route('/YandexID')
+def YandexID():
+    if request.args.get('code', False):
+        data_ = {
+            'grant_type': 'authorization_code',
+            'code': request.args.get('code'),
+            'client_id': CLIENTID,
+            'client_secret': CLIENT_SECRET
+        }
+        data_ = urlencode(data_)
+        oauthjson = post('https://oauth.yandex.ru/' + "token", data_).json()
+        userinfo = requests.get('https://login.yandex.ru/info',
+                                headers={'Authorization': 'OAuth' + oauthjson['access_token']}).json()
+        addUserDB(None, userinfo["default_email"], None)
+        username = getUserByEmail(userinfo["default_email"])
+        print(username)
+        login_user(UserLogin().create(username), True)
+
+        return redirect(url_for('index'))
+
+    return redirect('https://oauth.yandex.ru/' + "authorize?response_type=code&client_id={}".format(CLIENTID))
+
+
+# token = y0_AgAEA7qkZDnpAArr3AAAAADzfR787NjxVoYlTtmomwdea3sGtz34S5Q
+
+def addUserDB(name, email, hashed_psw):
+    user_id = str(uuid.uuid4())
+    try:
+        cur = conn.cursor()
+        timestamp = datetime.datetime.now()
+        cur.execute("INSERT INTO users VALUES(%s,%s, %s, %s,%s)", (user_id, name, email, hashed_psw, timestamp))
+        conn.commit()
+    except psycopg2.Error as e:
+        print("Error adding user to the database " + str(e))
+        return False
+    return True
+
+
+def addUser(email):
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT COUNT(*) as count FROM users WHERE email LIKE '{email}'")
+        res = cur.fetchone()
+        if res[0] > 0:
+            print("A user with this email already exists")
+            return False
+    except psycopg2.Error as e:
+        print("Error adding user to the database " + str(e))
+        return False
+    return True
+
+
+def getUser(id):
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT * FROM users WHERE id LIKE '{id}'")
+        res = cur.fetchone()
+        if not res:
+            return None
+        return res
+    except psycopg2.Error as e:
+        print("Ошибка получения данных из БД " + str(e))
+        return None
+
+
+def getUserByEmail(email):
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT * FROM users WHERE email LIKE '{email}'")
+        res = cur.fetchone()
+        if not res:
+            return False
+        return res
+    except psycopg2.Error as e:
+        print("Ошибка получения данных из БД " + str(e))
+    return False
+
+
+def getUserByPassword(email):
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT psw FROM users WHERE email LIKE '{email}'")
+        res = cur.fetchone()
+        if not res:
+            return False
+        return res[0]
+    except psycopg2.Error as e:
+        print("Ошибка получения данных из БД " + str(e))
+    return False
+
+
+def getUserById(email):
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT id FROM users WHERE email LIKE '{email}'")
+        res = cur.fetchone()
+        if not res:
+            return False
+        return res[0]
+    except psycopg2.Error as e:
+        print("Ошибка получения данных из БД " + str(e))
+    return False
+
+
+class UserLogin:
+    def fromDB(self, id):
+        self.__user = getUser(id)
+        return self
+
+    def create(self, user):
+        self.__user = user
+        return self
+
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return str(self.__user[0])
 
 
 if __name__ == '__main__':

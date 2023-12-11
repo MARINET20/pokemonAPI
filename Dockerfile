@@ -1,6 +1,11 @@
-FROM python:3.10.2-alpine
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt && python -m pip install --upgrade pip
-COPY . .
-CMD ["python", "main.py", "runserver", "0.0.0.0:5000"]
+FROM python:3-alpine
+
+ADD requirements.txt /requirements.txt
+
+RUN pip install -r /requirements.txt
+
+ADD main.py /main.py
+
+ENV FLASK_APP /main.py
+
+CMD flask run --host=0.0.0.0

@@ -1,4 +1,4 @@
-version: '3'
+version: '2'
 
 services:
   flask:
@@ -15,6 +15,21 @@ services:
     depends_on:
       - postgres
       - redis
+      - prometheus
+      - grafana
+
+  prometheus:
+    image: prom/prometheus:v2.33.0
+    volumes:
+      - ./prometheus/config.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+
+  grafana:
+    env_file: ./monitoring/config.monitoring
+    image: grafana/grafana:8.3.4
+    ports:
+      - 3000:3000
 
   postgres:
     env_file: ./docker/.env-postgresql

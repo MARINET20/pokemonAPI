@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link rel="stylesheet" href="../static/style.css">
+    <title>Авторизация</title>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-5 box-shadow-nav" style="height: 80px">
+       <a class="navbar-brand" href="{{ url_for('index') }}">Покемоны</a>
+   </nav>
+    <div class="row mt-5">
+    <div class="col-md-8 offset-md-2">
+        <form method="post">
+              <!-- Email input -->
+              <div class="form-outline mb-4">
+                <input type="email" id="email" name="email" class="form-control" required placeholder="Email"/>
+              </div>
+
+              <div class="form-outline mb-4">
+                <input type="password" id="psw" name="psw" class="form-control" required placeholder="Пароль"/>
+              </div>
+          <button type="submit" class="btn btn-primary btn-block mb-4">Войти</button>
+
+            <div class="row mb-4">
+                <div class="col">
+                  <!-- Simple link -->
+                  <a href="{{ url_for('forgotPassword') }}">Забыли пароль?</a>
+                </div>
+            </div>
+
+          <!-- Register buttons -->
+          <div class="text-center">
+            <p>Еще не зарегистрированы? <a href="{{ url_for('registration') }}">Регистрация</a></p>
+            <p>или зайти с помощью:</p>
+              <a href="/YandexID">С помощью Яндекс ID</a>
+<!--            <button type="button" class="btn btn-link btn-floating mx-1">-->
+<!--              <i class="fab fa-facebook-f"></i>-->
+<!--            </button>-->
+          </div>
+        </form>
+    </div>
+    </div>
+</body>
+</html>
